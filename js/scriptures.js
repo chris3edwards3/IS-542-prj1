@@ -6,117 +6,114 @@
 * DESCRIPTION:  Front-end JavaScript code for The Scriptures, Mapped.
 *               IS 542, Winter 2020, BYU.
 */
-
+/*global
+    console, XMLHttpRequest
+ */
 /*property
-    books, forEach, init, maxBookId, minBookId, onerror, onload, open, parse,
-    push, response, send, status
+    books, forEach, hash, init, log, maxBookId, minBookId, onHashChanged,
+    onerror, onload, open, parse, push, response, send, status
 */
+let Scriptures = (function () {
+    'use strict';
 
-const Scriptures = (function () {
-  "use strict";
+    /*---------------------------------------------------------------
+    *                     CONSTANTS
+    */
 
-  /*---------------------------------------------------------------
-  *           CONSTANTS
-  */
+    /*---------------------------------------------------------------
+    *                             PRIVATE VARIABLES
+    */
+    let books;
+    let volumes;
 
-  /*---------------------------------------------------------------
-  *               PRIVATE VARIABLES
-  */
-  let books;
-  let volumes;
+    /*---------------------------------------------------------------
+    *                             PRIVATE METHOD DECLARATIONS
+    */
+    let ajax;
+    let cacheBooks;
+    let init;
+    let onHashChanged;
 
-  /*---------------------------------------------------------------
-  *               PRIVATE METHOD DECLARATIONS
-  */
-  let ajax;
-  let cacheBooks;
-  let init;
-  let onHashChanged;
+    /*---------------------------------------------------------------
+    *                             PRIVATE METHODS
+    */
+    ajax = function (url, successCallback, failureCallback) {
+        // Source: http://youmightnotneedjquery.com/
+        let request = new XMLHttpRequest();
+        request.open('GET', url, true);
 
-  /*---------------------------------------------------------------
-  *               PRIVATE METHODS
-  */
-  ajax = function (url, successCallback, failureCallback) {
-    // Source: http://youmightnotneedjquery.com/
-    let request = new XMLHttpRequest();
-    request.open('GET', url, true);
+        request.onload = function () {
+            if (request.status >= 200 && request.status < 400) {
+                // Success!
+                let data = JSON.parse(request.response);
 
-    request.onload = function() {
-      if (request.status >= 200 && request.status < 400) {
-        // Success!
-        let data = JSON.parse(request.responseText);
+                if (typeof successCallback === "function") {
+                    successCallback(data);
+                }
+            } else {
+                // We reached our target server, but it returned an error
+                if (typeof failureCallback === "function") {
+                    failureCallback(request);
+                }
+            }
+        };
 
-        if (typeof successCallback === "function") {
-          successCallback(data);
-        }
-      } else {
-        // We reached our target server, but it returned an error
-        if (typeof failureCallback === "function") {
-          failureCallback(request);
-        }
-      }
+        request.onerror = failureCallback;
+        request.send();
     };
 
-    request.onerror = failureCallback;
-    request.send();
-  };
+    cacheBooks = function (onInitializedCallback) {
+        volumes.forEach(function (volume) {
+            let volumeBooks = [];
+            let bookId = volume.minBookId;
 
-  cacheBooks = function (onInitializedCallback) {
-    volumes.forEach(function (volume) {
-      let volumeBooks = [];
-      let bookId = volume.minBookId;
+            while (bookId <= volume.maxBookId) {
+                volumeBooks.push(books[bookId]);
+                bookId += 1;
+            }
 
-      while (bookId <= volume.maxBookId) {
-        volumeBooks.push(books[bookId]);
-        bookId += 1;
-      }
+            volume.books = volumeBooks;
+        });
 
-      volume.books = volumeBooks;
-    });
-
-    if (typeof onInitializedCallback === "function") {
-      onInitializedCallback();
-    }
-  };
-
-  init = function (onInitializedCallback) {
-    console.log("Started init...");
-    let booksLoaded = false;
-    let volumesLoaded = false;
-
-    ajax("https://scriptures.byu.edu/mapscrip/model/books.php",
-      function (data) {
-        books = data;
-        booksLoaded = true;
-
-        if (volumesLoaded) {
-          cacheBooks(onInitializedCallback);
+        if (typeof onInitializedCallback === "function") {
+            onInitializedCallback();
         }
-      }
-    );
+    };
 
-    ajax("https://scriptures.byu.edu/mapscrip/model/volumes.php",
-      function (data) {
-        volumes = data;
-        volumesLoaded = true;
+    init = function (onInitializedCallback) {
+        console.log("Started init...");
+        let booksLoaded = false;
+        let volumesLoaded = false;
 
-        if (booksLoaded) {
-          cacheBooks(onInitializedCallback);
-        }
-      }
-    );
-  };
+        ajax("https://scriptures.byu.edu/mapscrip/model/books.php", function (data) {
+            books = data;
+            booksLoaded = true;
 
-  onHashChanged = function () {
-    console.log("The has is " + location.hash);
-  };
+            if (volumesLoaded) {
+                cacheBooks(onInitializedCallback);
+            }
+        });
 
-  /*---------------------------------------------------------------
-  *                 PUBLIC API
-  */
+        ajax("https://scriptures.byu.edu/mapscrip/model/volumes.php", function (data) {
+            volumes = data;
+            volumesLoaded = true;
 
-  return {
-    init: init,
-    onHashChanged: onHashChanged
-  };
+            if (booksLoaded) {
+                cacheBooks(onInitializedCallback);
+            }
+        });
+    };
+
+    onHashChanged = function () {
+        console.log("The has is " + location.hash);
+    };
+
+    /*---------------------------------------------------------------
+    *                                 PUBLIC API
+    */
+
+    return {
+        init,
+        onHashChanged
+    };
 }());
