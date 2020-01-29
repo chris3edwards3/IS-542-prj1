@@ -1,11 +1,16 @@
-/*=================================================================
- * File:   scriptures.js
- * AUTHOR: Stephen W. Liddle, re-created by Chris Edwards
- * DATE:   Winter 2020
- *
- * DESCRIPTION:  Front-end JavaScript code for The Scriptures, Mapped.
- *               IS 542, Winter 2020, BYU.
- */
+/*
+* File:   scriptures.js
+* AUTHOR: Stephen W. Liddle, re-created by Chris Edwards
+* DATE:   Winter 2020
+*
+* DESCRIPTION:  Front-end JavaScript code for The Scriptures, Mapped.
+*               IS 542, Winter 2020, BYU.
+*/
+
+/*property
+    books, forEach, init, maxBookId, minBookId, onerror, onload, open, parse,
+    push, response, send, status
+*/
 
 const Scriptures = (function () {
   "use strict";
@@ -15,24 +20,25 @@ const Scriptures = (function () {
   */
 
   /*---------------------------------------------------------------
-  *           PRIVATE VARIABLES
+  *               PRIVATE VARIABLES
   */
   let books;
   let volumes;
 
   /*---------------------------------------------------------------
-  *           PRIVATE METHOD DECLARATIONS
+  *               PRIVATE METHOD DECLARATIONS
   */
   let ajax;
   let cacheBooks;
   let init;
+  let onHashChanged;
 
   /*---------------------------------------------------------------
-  *           PRIVATE METHODS
+  *               PRIVATE METHODS
   */
   ajax = function (url, successCallback, failureCallback) {
+    // Source: http://youmightnotneedjquery.com/
     let request = new XMLHttpRequest();
-
     request.open('GET', url, true);
 
     request.onload = function() {
@@ -55,8 +61,8 @@ const Scriptures = (function () {
     request.send();
   };
 
-  cacheBooks = function (callback) {
-    volumes.forEach(volume => {
+  cacheBooks = function (onInitializedCallback) {
+    volumes.forEach(function (volume) {
       let volumeBooks = [];
       let bookId = volume.minBookId;
 
@@ -68,43 +74,49 @@ const Scriptures = (function () {
       volume.books = volumeBooks;
     });
 
-    if (typeof callback === "function") {
-      callback();
+    if (typeof onInitializedCallback === "function") {
+      onInitializedCallback();
     }
   };
 
-  init = function (callback) {
+  init = function (onInitializedCallback) {
+    console.log("Started init...");
     let booksLoaded = false;
     let volumesLoaded = false;
 
     ajax("https://scriptures.byu.edu/mapscrip/model/books.php",
-      data => {
+      function (data) {
         books = data;
         booksLoaded = true;
 
         if (volumesLoaded) {
-          cacheBooks(callback);
+          cacheBooks(onInitializedCallback);
         }
       }
     );
 
     ajax("https://scriptures.byu.edu/mapscrip/model/volumes.php",
-      data => {
+      function (data) {
         volumes = data;
         volumesLoaded = true;
 
         if (booksLoaded) {
-          cacheBooks(callback);
+          cacheBooks(onInitializedCallback);
         }
       }
     );
   };
 
+  onHashChanged = function () {
+    console.log("The has is " + location.hash);
+  };
+
   /*---------------------------------------------------------------
-  *           PUBLIC API
+  *                 PUBLIC API
   */
 
   return {
-    init: init
+    init: init,
+    onHashChanged: onHashChanged
   };
 }());

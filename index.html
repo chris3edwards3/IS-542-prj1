@@ -31,7 +31,19 @@
   </div>
   <div id="navigator"></div>
   <div id="map"></div>
+  <script type="text/javascript">
+    function ready(fn) {
+      if (document.readyState !== 'loading'){
+        fn();
+      } else {
+        document.addEventListener('DOMContentLoaded', fn);
+      }
+    }
 
+    ready(function () {
+      Scriptures.init(() => { console.log("Initialization of Scriptures is finished."); });
+      window.addEventListener("hashchange", Scriptures.onHashChanged);
+    });
+  </script>
 </body>
-
 </html>
