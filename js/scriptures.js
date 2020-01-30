@@ -81,14 +81,16 @@ let Scriptures = (function () {
 
     request.onload = function () {
       if (request.status >= REQUEST_STATUS_OK && request.status < REQUEST_STATUS_ERROR) {
-        // Success!
-        let data = skipJsonParse ? request.response : JSON.parse(request.response);
+        let data = (
+          skipJsonParse
+            ? request.response
+            : JSON.parse(request.response)
+        );
 
         if (typeof successCallback === "function") {
           successCallback(data);
         }
       } else {
-        // We reached our target server, but it returned an error
         if (typeof failureCallback === "function") {
           failureCallback(request);
         }
