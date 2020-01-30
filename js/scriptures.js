@@ -29,6 +29,7 @@ let Scriptures = (function () {
   const BOTTOM_PADDING = "<br /><br />";
   const CLASS_BOOKS = "books";
   const CLASS_BUTTON = "btn";
+  const CLASS_CHAPTER = "chapter";
   const CLASS_VOLUME = "volume";
   const DIV_SCRIPTURES_NAVIGATOR = "scripnav";
   const DIV_SCRIPTURES = "scriptures";
@@ -53,6 +54,8 @@ let Scriptures = (function () {
   let booksGrid;
   let booksGridContent;
   let cacheBooks;
+  let chaptersContent;
+  let chaptersGridContent;
   let htmlAnchor;
   let htmlDiv;
   let htmlElement;
@@ -146,6 +149,34 @@ let Scriptures = (function () {
     }
   };
 
+  chaptersContent = function (book) {
+    return htmlDiv({
+      classKey: CLASS_VOLUME,
+      content: htmlElement(TAG_VOLUME_HEADER, book.fullName)
+    }) + htmlDiv ({
+      classKey: CLASS_BOOKS,
+      content: chaptersGridContent(book)
+    });
+  };
+
+  chaptersGridContent = function (book) {
+    let gridContent = "";
+    let chapter = 1;
+
+    while (chapter < book.numChapters) {
+      gridContent += htmlLink({
+        classKey: `${CLASS_BUTTON} ${CLASS_CHAPTER}`,
+        id: chapter,
+        href: `#0:${book.id}:${chapter}`,
+        content: chapter
+      });
+
+      chapter += 1;
+    }
+
+    return gridContent;
+  };
+
   htmlAnchor = function (volume) {
     return `<a name="v${volume.id}" />`;
   };
@@ -223,7 +254,17 @@ let Scriptures = (function () {
   };
 
   navigateBook = function (bookId) {
-    console.log("navigateBook " + bookId);
+    let book = books[bookId];
+
+    if (book.numChapters <= 1) {
+      navigateChapter(book.id, book.numChapters);
+    } else {
+      document.getElementById(DIV_SCRIPTURES).innerHTML = htmlDiv({
+        id: DIV_SCRIPTURES_NAVIGATOR,
+        content: chaptersContent(book)
+      });
+    }
+
   };
 
   navigateChapter = function (bookId, chapter) {
