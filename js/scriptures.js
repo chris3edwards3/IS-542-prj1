@@ -14,10 +14,11 @@
     console, XMLHttpRequest
  */
 /*property
-    books, classKey, content, forEach, fullName, getElementById, gridName, hash,
-    href, id, init, innerHTML, length, log, maxBookId, minBookId, numChapters,
-    onHashChanged, onerror, onload, open, parse, push, response, send, slice,
-    split, status, tocName
+    books, classKey, content, exec, forEach, fullName, getAttribute,
+    getElementById, gridName, hash, href, id, init, innerHTML, length, log,
+    maxBookId, minBookId, numChapters, onHashChanged, onerror, onload, open,
+    parse, push, querySelectorAll, response, send, slice, split, status,
+    tocName
 */
 
 let Scriptures = (function () {
@@ -33,6 +34,11 @@ let Scriptures = (function () {
     const CLASS_VOLUME = "volume";
     const DIV_SCRIPTURES_NAVIGATOR = "scripnav";
     const DIV_SCRIPTURES = "scriptures";
+    const INDEX_FLAG = 11;
+    const INDEX_LATITUDE = 3;
+    const INDEX_LONGITUDE = 4;
+    const INDEX_PLACENAME = 2;
+    const LAT_LON_PARSER = /\((.*),'(.*)',(.*),(.*),(.*),(.*),(.*),(.*),(.*),(.*),'(.*)'\)/;
     const REQUEST_GET = "GET";
     const REQUEST_STATUS_OK = 200;
     const REQUEST_STATUS_ERROR = 400;
@@ -45,11 +51,13 @@ let Scriptures = (function () {
     *                             PRIVATE VARIABLES
     */
     let books;
+    let gmMarkers = [];
     let volumes;
 
     /*---------------------------------------------------------------
     *                             PRIVATE METHOD DECLARATIONS
     */
+    let addMarker;
     let ajax;
     let bookChapterValid;
     let booksGrid;
@@ -57,6 +65,7 @@ let Scriptures = (function () {
     let cacheBooks;
     let chaptersGrid;
     let chaptersGridContent;
+    let clearMarkers;
     let encodedScripturesUrlParameters;
     let getScripturesCallback;
     let getScripturesFailure;
@@ -71,12 +80,19 @@ let Scriptures = (function () {
     let nextChapter;
     let onHashChanged;
     let previousChapter;
+    let setupMarkers;
     let titleForBookChapter;
     let volumesGridContent;
 
     /*---------------------------------------------------------------
     *                             PRIVATE METHODS
     */
+    addMarker = function (placename, latitude, longitude) {
+        // TODO: check to see if we already have this lat/lon in the gmMarkers array.
+        // TODO: create the marker and append it to the gmMarkers array
+        console.log(placename, latitude, longitude);
+    };
+
     ajax = function (url, successCallback, failureCallback, skipJsonParse) {
         // Source: http://youmightnotneedjquery.com/
         let request = new XMLHttpRequest();
@@ -186,6 +202,16 @@ let Scriptures = (function () {
         return gridContent;
     };
 
+    clearMarkers = function () {
+        gmMarkers.forEach(function (marker) {
+            // TODO: leaflet clear markers
+            // marker.setMap(null);
+            console.log(marker);
+        });
+
+        gmMarkers = [];
+    };
+
     encodedScripturesUrlParameters = function (bookId, chapter, verses, isJst) {
         if (bookId !== undefined && chapter !== undefined) {
             let options = "";
@@ -205,7 +231,7 @@ let Scriptures = (function () {
     getScripturesCallback = function (chapterHtml) {
         document.getElementById(DIV_SCRIPTURES).innerHTML = chapterHtml;
 
-        // TODO: setupMarkers();
+        setupMarkers();
     };
 
     getScripturesFailure = function () {
@@ -306,8 +332,7 @@ let Scriptures = (function () {
         console.log("Prev Chapter: " + previousChapter(bookId, chapter));
         console.log("Next Chapter: " + nextChapter(bookId, chapter));
 
-        ajax(encodedScripturesUrlParameters(bookId, chapter), getScripturesCallback,
-            getScripturesFailure, true);
+        ajax(encodedScripturesUrlParameters(bookId, chapter), getScripturesCallback, getScripturesFailure, true);
 
     };
 
@@ -393,9 +418,9 @@ let Scriptures = (function () {
         if (book !== undefined) {
             if (chapter > 1 && chapter <= book.numChapters) {
                 return [
-                  bookId,
-                  chapter - 1,
-                  titleForBookChapter(book, chapter - 1)
+                    bookId,
+                    chapter - 1,
+                    titleForBookChapter(book, chapter - 1)
                 ];
             }
 
@@ -409,12 +434,36 @@ let Scriptures = (function () {
                 }
 
                 return [
-                  previousBook.id,
-                  previousChapterValue,
-                  titleForBookChapter(previousBook, previousChapterValue)
+                    previousBook.id,
+                    previousChapterValue,
+                    titleForBookChapter(previousBook, previousChapterValue)
                 ];
             }
         }
+    };
+
+    setupMarkers = function () {
+        if (gmMarkers.length > 0) {
+            clearMarkers();
+        }
+
+        document.querySelectorAll("a[onclick^=\"showLocation(\"]").forEach(function (element) {
+            let matches = LAT_LON_PARSER.exec(element.getAttribute("onclick"));
+
+            if (matches) {
+                let placename = matches[INDEX_PLACENAME];
+                let latitude = matches[INDEX_LATITUDE];
+                let longitude = matches[INDEX_LONGITUDE];
+                let flag = matches[INDEX_FLAG];
+
+                if (flag !== "") {
+                    placename += ` ${flag}`;
+                }
+
+                addMarker(placename, latitude, longitude);
+            }
+            console.log(element, matches);
+        });
     };
 
     titleForBookChapter = function (book, chapter) {
