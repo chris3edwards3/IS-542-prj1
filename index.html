@@ -13,6 +13,20 @@
   <!-- Place favicon.ico in the root directory -->
 
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Load Leaflet from CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+          integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+          crossorigin=""></script>
+
+  <!-- Load Esri Leaflet from CDN -->
+  <script src="https://unpkg.com/esri-leaflet@2.3.3/dist/esri-leaflet.js"
+          integrity="sha512-cMQ5e58BDuu1pr9BQ/eGRn6HaR6Olh0ofcHFWe5XesdCITVuSBiBZZbhCijBe5ya238f/zMMRYIMIIg1jxv4sQ=="
+          crossorigin=""></script>
+
   <script src="js/scriptures.js"></script>
 </head>
 
@@ -53,6 +67,13 @@
         });
       window.addEventListener("hashchange", Scriptures.onHashChanged);
     });
+  </script>
+  <script async defer>
+    let map = L.map('map', {
+      center: [20, 0],
+      zoom: 2,
+    });
+    L.esri.basemapLayer('Topographic').addTo(map);
   </script>
 </body>
 </html>

@@ -11,7 +11,7 @@
   long: true
  */
 /*global
-    console, XMLHttpRequest
+    console, L, map, XMLHttpRequest
  */
 /*property
     books, classKey, content, exec, forEach, fullName, getAttribute,
@@ -51,7 +51,8 @@ let Scriptures = (function () {
     *                             PRIVATE VARIABLES
     */
     let books;
-    let gmMarkers = [];
+    let leafletMarkers = [];
+    let leafletMarkerGroup = L.featureGroup();
     let volumes;
 
     /*---------------------------------------------------------------
@@ -87,10 +88,21 @@ let Scriptures = (function () {
     /*---------------------------------------------------------------
     *                             PRIVATE METHODS
     */
-    addMarker = function (placename, latitude, longitude) {
-        // TODO: check to see if we already have this lat/lon in the gmMarkers array.
-        // TODO: create the marker and append it to the gmMarkers array
-        console.log(placename, latitude, longitude);
+    addMarker = function () {
+        // TODO: check to see if we already have this lat/lon in the leafletMarkers array.
+
+        // leafletMarkerGroup = L.featureGroup();
+        console.log('addMarkers() started.');
+        if (leafletMarkers.length > 0) {
+            leafletMarkers.forEach( function (markerArray) {
+                let marker = L.marker([markerArray[1], markerArray[2]])
+                    .bindTooltip(markerArray[0], {permanent: true})
+                    .addTo(leafletMarkerGroup);
+            });
+
+            leafletMarkerGroup.addTo(map);
+            map.fitBounds(leafletMarkerGroup.getBounds(), {maxZoom: 10});
+        }
     };
 
     ajax = function (url, successCallback, failureCallback, skipJsonParse) {
@@ -203,13 +215,9 @@ let Scriptures = (function () {
     };
 
     clearMarkers = function () {
-        gmMarkers.forEach(function (marker) {
-            // TODO: leaflet clear markers
-            // marker.setMap(null);
-            console.log(marker);
-        });
-
-        gmMarkers = [];
+        leafletMarkerGroup.clearLayers();
+        leafletMarkers = [];
+        map.setView([20, 0], 2);
     };
 
     encodedScripturesUrlParameters = function (bookId, chapter, verses, isJst) {
@@ -410,6 +418,10 @@ let Scriptures = (function () {
                 }
             }
         }
+
+        if (leafletMarkers.length > 0) {
+            clearMarkers();
+        }
     };
 
     previousChapter = function (bookId, chapter) {
@@ -443,7 +455,8 @@ let Scriptures = (function () {
     };
 
     setupMarkers = function () {
-        if (gmMarkers.length > 0) {
+        console.log('setupMarkers() started.');
+        if (leafletMarkers.length > 0) {
             clearMarkers();
         }
 
@@ -460,10 +473,16 @@ let Scriptures = (function () {
                     placename += ` ${flag}`;
                 }
 
-                addMarker(placename, latitude, longitude);
+                let marker = [placename, latitude, longitude];
+
+                leafletMarkers.push(marker);
+
+                // addMarker(placename, latitude, longitude);
             }
-            console.log(element, matches);
+            // console.log(element, matches);
         });
+
+        addMarker();
     };
 
     titleForBookChapter = function (book, chapter) {
