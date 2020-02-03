@@ -74,6 +74,11 @@
       zoom: 8,
     });
     L.esri.basemapLayer('Topographic').addTo(map);
+    L.control.scale().addTo(map);
+
+    function showLocation() {
+      Scriptures.showLocation(...arguments);
+    }
   </script>
 </body>
 </html>

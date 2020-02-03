@@ -19,7 +19,7 @@
     getElementById, gridName, hash, href, id, includes, init, innerHTML, length,
     log, marker, maxBookId, maxZoom, minBookId, numChapters, onHashChanged,
     onerror, onload, opacity, open, parse, permanent, push, querySelectorAll,
-    response, send, setView, slice, split, status, tocName
+    response, send, setView, showLocation, slice, split, status, tocName
 */
 
 let Scriptures = (function () {
@@ -83,6 +83,7 @@ let Scriptures = (function () {
     let onHashChanged;
     let previousChapter;
     let setupMarkers;
+    let showLocation;
     let titleForBookChapter;
     let volumesGridContent;
 
@@ -90,9 +91,6 @@ let Scriptures = (function () {
     *                             PRIVATE METHODS
     */
     addMarker = function () {
-        console.log("addMarkers() started.");
-        console.log(leafletMarkers);
-
         if (leafletMarkers.length > 0) {
             leafletMarkers.forEach(function (markerArray) {
                 let label = markerArray[0];
@@ -460,7 +458,6 @@ let Scriptures = (function () {
     };
 
     setupMarkers = function () {
-        console.log("setupMarkers() started.");
         if (leafletMarkers.length > 0) {
             clearMarkers();
         }
@@ -501,6 +498,25 @@ let Scriptures = (function () {
         addMarker();
     };
 
+    showLocation = function (geotagId, placename, latitude, longitude, viewLatitude, viewLongitude, viewTilt, viewRoll, viewAltitude, viewHeading) {
+        let zoomLevel;
+
+        // TODO: figure out the best way to do this zoom level
+        if (viewAltitude > 10000) {
+            zoomLevel = 8;
+        } else if (viewAltitude > 8000) {
+            zoomLevel = 9;
+        } else if (viewAltitude > 6000) {
+            zoomLevel = 10;
+        } else if (viewAltitude > 4000) {
+            zoomLevel = 11;
+        } else {
+            zoomLevel = 12;
+        }
+
+        map.setView([latitude, longitude], zoomLevel);
+    };
+
     titleForBookChapter = function (book, chapter) {
         if (book !== undefined) {
             if (chapter > 0) {
@@ -533,6 +549,7 @@ let Scriptures = (function () {
 
     return {
         init,
-        onHashChanged
+        onHashChanged,
+        showLocation
     };
 }());
