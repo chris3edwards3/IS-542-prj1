@@ -14,12 +14,13 @@
     console, L, map, XMLHttpRequest
  */
 /*property
-    addTo, bindTooltip, books, classKey, clearLayers, content, exec,
+    addTo, bindTooltip, books, changeHash, classKey, clearLayers, content, exec,
     featureGroup, fitBounds, forEach, fullName, getAttribute, getBounds,
     getElementById, gridName, hash, href, id, includes, init, innerHTML, length,
-    log, marker, maxBookId, maxZoom, minBookId, numChapters, onHashChanged,
-    onerror, onload, opacity, open, parse, permanent, push, querySelectorAll,
-    response, send, setView, showLocation, slice, split, status, tocName
+    log, marker, maxBookId, maxZoom, minBookId, navigateHome, numChapters,
+    onHashChanged, onclick, onerror, onload, opacity, open, parentBookID,
+    parentBookId, parse, permanent, push, querySelectorAll, response, send,
+    setView, showLocation, slice, split, status, tocName
 */
 
 let Scriptures = (function () {
@@ -230,7 +231,7 @@ let Scriptures = (function () {
         let newHash = "";
 
         if (volumeId !== undefined) {
-            newHash += volumeID;
+            newHash += volumeId;
 
             if (bookId !== undefined) {
                 newHash += `${bookId}`;
