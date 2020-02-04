@@ -664,7 +664,6 @@ let Scriptures = (function () {
     showLocation = function (geotagId, placename, latitude, longitude, viewLatitude, viewLongitude, viewTilt, viewRoll, viewAltitude, viewHeading) {
         let zoomLevel;
 
-        // TODO: figure out the best way to do this zoom level
         if (viewAltitude > 10000) {
             zoomLevel = 8;
         } else if (viewAltitude > 8000) {
