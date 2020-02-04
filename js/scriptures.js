@@ -1,6 +1,6 @@
 /*==================================================================
 * File:   scriptures.js
-* AUTHOR: Stephen W. Liddle, re-created by Chris Edwards
+* AUTHOR: Chris Edwards, based on work done by Stephen W. Liddle
 * DATE:   Winter 2020
 *
 * DESCRIPTION:  Front-end JavaScript code for The Scriptures, Mapped.
@@ -17,10 +17,10 @@
     addTo, bindTooltip, books, changeHash, classKey, clearLayers, content, exec,
     featureGroup, fitBounds, forEach, fullName, getAttribute, getBounds,
     getElementById, gridName, hash, href, id, includes, init, innerHTML, length,
-    log, marker, maxBookId, maxZoom, minBookId, navigateHome, numChapters,
-    onHashChanged, onclick, onerror, onload, opacity, open, parentBookID,
-    parentBookId, parse, permanent, push, querySelectorAll, response, send,
-    setView, showLocation, slice, split, status, tocName
+    log, marker, maxBookId, maxZoom, minBookId, numChapters, onHashChanged,
+    onclick, onerror, onload, opacity, open, parentBookId, parse, permanent,
+    push, querySelectorAll, response, send, setView, showLocation, slice, split,
+    status, title, tocName
 */
 
 let Scriptures = (function () {
@@ -59,8 +59,8 @@ let Scriptures = (function () {
     let books;
     let leafletMarkers = [];
     let leafletMarkerGroup = L.featureGroup();
+    let prevNextDiv;
     let requestedBreadcrumbs;
-    let retryDelay = 500;
     let volumes;
 
     /*---------------------------------------------------------------
@@ -78,9 +78,11 @@ let Scriptures = (function () {
     let chaptersGridContent;
     let clearMarkers;
     let encodedScripturesUrlParameters;
+    let getPrevNextHash;
     let getScripturesCallback;
     let getScripturesFailure;
     let htmlAnchor;
+    let htmlButton;
     let htmlDiv;
     let htmlElement;
     let htmlHashLink;
@@ -120,7 +122,6 @@ let Scriptures = (function () {
     };
 
     ajax = function (url, successCallback, failureCallback, skipJsonParse) {
-        // Source: http://youmightnotneedjquery.com/
         let request = new XMLHttpRequest();
         request.open(REQUEST_GET, url, true);
 
@@ -193,7 +194,7 @@ let Scriptures = (function () {
             if (book === undefined) {
                 crumbs += htmlElement(TAG_LIST_ITEM, volume.fullName);
             } else {
-                crumbs += htmlElement(TAG_LIST_ITEM, htmlElement(TAG_LIST_ITEM, htmlHashLink(`${volume.id}`, volume.fullName)));
+                crumbs += htmlElement(TAG_LIST_ITEM, htmlHashLink(`${volume.id}`, volume.fullName));
 
                 if (chapter === undefined || chapter <= 0) {
                     crumbs += htmlElement(TAG_LIST_ITEM, book.tocName);
@@ -201,8 +202,6 @@ let Scriptures = (function () {
                     crumbs += htmlElement(TAG_LIST_ITEM, htmlHashLink(`${volume.id},${book.id}`, book.tocName));
                     crumbs += htmlElement(TAG_LIST_ITEM, chapter);
                 }
-
-
             }
         }
 
@@ -234,13 +233,12 @@ let Scriptures = (function () {
             newHash += volumeId;
 
             if (bookId !== undefined) {
-                newHash += `${bookId}`;
+                newHash += `:${bookId}`;
 
                 if (chapter !== undefined) {
-                    newHash += `${chapter}`;
+                    newHash += `:${chapter}`;
                 }
             }
-
         }
 
         location.hash = newHash;
@@ -271,8 +269,6 @@ let Scriptures = (function () {
             chapter += 1;
         }
 
-        // gridContent += '<div><h3>Test</h3></div>';
-
         return gridContent;
     };
 
@@ -298,13 +294,55 @@ let Scriptures = (function () {
         }
     };
 
+    getPrevNextHash = function (nextChapArray, prevChapArray) {
+        let currentHash = [];
+        let nextButton;
+        let prevButton;
+        let volume;
+
+        if (location.hash !== "" && location.hash.length > 1) {
+            currentHash = location.hash.slice(1).split(":");
+            volume = currentHash[0];
+        }
+
+        if (nextChapArray !== undefined) {
+            let nextBookId = nextChapArray[0];
+            let nextChapId = nextChapArray[1];
+            let nextChapTitle = nextChapArray[2];
+            let nextHashArguments = `${volume},${nextBookId},${nextChapId}`;
+            nextButton = htmlButton({
+                content: " NEXT >>",
+                onclick: `Scriptures.changeHash(${nextHashArguments})`,
+                title: nextChapTitle
+            });
+        } else {
+            nextButton = "";
+        }
+
+        if (prevChapArray !== undefined) {
+            let prevBookId = prevChapArray[0];
+            let prevChapId = prevChapArray[1];
+            let prevChapTitle = prevChapArray[2];
+            let prevHashArguments = `${volume},${prevBookId},${prevChapId}`;
+            prevButton = htmlButton({
+                content: "<< PREV ",
+                onclick: `Scriptures.changeHash(${prevHashArguments})`,
+                title: prevChapTitle
+            });
+        } else {
+            prevButton = "";
+        }
+
+        prevNextDiv = htmlDiv({
+            content: prevButton + nextButton
+        });
+    };
+
     getScripturesCallback = function (chapterHtml) {
-        document.getElementById(DIV_SCRIPTURES).innerHTML = chapterHtml;
+        document.getElementById(DIV_SCRIPTURES).innerHTML = prevNextDiv + chapterHtml;
         document.getElementById(DIV_BREADCRUMBS).innerHTML = requestedBreadcrumbs;
 
         setupMarkers();
-        console.log(volumes);
-        console.log(books);
     };
 
     getScripturesFailure = function () {
@@ -313,6 +351,36 @@ let Scriptures = (function () {
 
     htmlAnchor = function (volume) {
         return `<a name="v${volume.id}" />`;
+    };
+
+    htmlButton = function (parameters) {
+        let classString = "";
+        let contentString = "";
+        let idString = "";
+        let onclickString = "";
+        let titleString = "";
+
+        if (parameters.classKey !== undefined) {
+            classString = ` class="${parameters.classKey}"`;
+        }
+
+        if (parameters.content !== undefined) {
+            contentString = parameters.content;
+        }
+
+        if (parameters.id !== undefined) {
+            idString = ` id="${parameters.id}"`;
+        }
+
+        if (parameters.onclick !== undefined) {
+            onclickString = ` onclick="${parameters.onclick}"`;
+        }
+
+        if (parameters.title !== undefined) {
+            titleString = ` title="${parameters.title}"`;
+        }
+
+        return `<button ${idString}${classString}${titleString}${onclickString}>${contentString}</button>`;
     };
 
     htmlDiv = function (parameters) {
@@ -339,11 +407,12 @@ let Scriptures = (function () {
         return `<${tagName}>${content}</${tagName}>`;
     };
 
-    htmlHashLink = function (hashArguments, content) {
+    htmlHashLink = function (hashArguments, content, title) {
         return htmlLink({
             content,
             href: "javascript:void(0)",
-            onclick: `Scriptures.changeHash($hashArguments})`
+            onclick: `Scriptures.changeHash(${hashArguments})`,
+            title
         });
     };
 
@@ -353,6 +422,7 @@ let Scriptures = (function () {
         let hrefString = "";
         let idString = "";
         let onclickString = "";
+        let titleString = "";
 
         if (parameters.classKey !== undefined) {
             classString = ` class="${parameters.classKey}"`;
@@ -374,7 +444,11 @@ let Scriptures = (function () {
             onclickString = ` onclick="${parameters.onclick}"`;
         }
 
-        return `<a${idString}${classString}${hrefString}${onclickString}>${contentString}</a>`;
+        if (parameters.title !== undefined) {
+            titleString = ` title="${parameters.title}"`;
+        }
+
+        return `<a${idString}${classString}${titleString}${hrefString}${onclickString}>${contentString}</a>`;
     };
 
     init = function (onInitializedCallback) {
@@ -420,18 +494,19 @@ let Scriptures = (function () {
     };
 
     navigateChapter = function (bookId, chapter) {
-        console.log("Prev Chapter: " + previousChapter(bookId, chapter));
-        console.log("Next Chapter: " + nextChapter(bookId, chapter));
-
         let book = books[bookId];
+        let nextChapArray = nextChapter(bookId, chapter);
+        let prevChapArray = previousChapter(bookId, chapter);
 
         if (book !== undefined) {
-            let volume = volumeForId(book.parentBookID);
+            let volume = volumeForId(book.parentBookId);
 
             requestedBreadcrumbs = breadcrumbs(volume, book, chapter);
         }
 
         ajax(encodedScripturesUrlParameters(bookId, chapter), getScripturesCallback, getScripturesFailure, true);
+
+        getPrevNextHash(nextChapArray, prevChapArray);
     };
 
     navigateHome = function (volumeId) {
@@ -439,6 +514,7 @@ let Scriptures = (function () {
             id: DIV_SCRIPTURES_NAVIGATOR,
             content: volumesGridContent(volumeId)
         });
+        document.getElementById(DIV_BREADCRUMBS).innerHTML = breadcrumbs(volumeForId(volumeId));
     };
 
     nextChapter = function (bookId, chapter) {
@@ -643,7 +719,6 @@ let Scriptures = (function () {
     return {
         changeHash,
         init,
-        navigateHome,
         onHashChanged,
         showLocation
     };
